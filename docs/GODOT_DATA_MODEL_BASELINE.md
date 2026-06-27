@@ -142,7 +142,7 @@ This document extracts baseline data tables from the Phaser project so the Godot
 
 ## 5. Resources
 
-**Source**: `src/state/types.ts` (`ResourceType`, `RESOURCE_RAW_AMOUNTS`), `src/config/coreMechanicsTypes.ts` (`AcceptedResourceClassId`, `ResourceClassConfig`, `ResourcePlacementZone`)
+**Source**: `src/state/types.ts` (`ResourceType`, `RESOURCE_RAW_AMOUNTS`), `src/config/coreMechanicsTypes.ts` (`AcceptedResourceClassId`, `ResourceClassConfig`, `ResourcePlacementZone`), `src/config/resourceClassData.ts` (`RESOURCE_CLASS_CONFIGS`)
 
 ### 5.1 Legacy resource types (PHASER FACT)
 
@@ -153,20 +153,32 @@ This document extracts baseline data tables from the Phaser project so the Godot
 | `large` | 120 | 1 |
 | `infinite` | 999_999 | 3 |
 
-### 5.2 Accepted six-class resource model (PHASER FACT)
+Note: Legacy `infinite` footprint is 3. This is separate from the accepted six-class production model below.
+
+### 5.2 Accepted six-class resource model (PHASER FACT — extracted from `src/config/resourceClassData.ts`)
 
 | Class ID | Russian name | Strategic role | Placement zone | Footprint | amountMin | amountMax | isInfinite |
 |---|---|---|---|---|---|---|---|
-| `very_poor` | Очень бедная залежь | starter zone, quick depletion | starter | 1 | NOT IN PHASER (placeholder) | NOT IN PHASER | false |
-| `poor` | Бедная залежь | starter zone, initial gathering | starter | 1 | NOT IN PHASER | NOT IN PHASER | false |
-| `medium` | Средняя залежь | side zone, stable income | side | 1 | NOT IN PHASER | NOT IN PHASER | false |
-| `rich` | Богатая залежь | contested zone, worth fighting for | contested | 1 | NOT IN PHASER | NOT IN PHASER | false |
-| `very_rich` | Очень богатая залежь | contested zone, strategic value | contested | 1 | NOT IN PHASER | NOT IN PHASER | false |
-| `infinite` | Бесконечная залежь | center of map, never depletes | center | 3 | N/A | N/A | true |
+| `very_poor` | Очень бедная залежь | Starter zone minimal deposit | starter | 1 | 150 | 250 | false |
+| `poor` | Бедная залежь | Starter zone secondary deposit | starter | 1 | 300 | 500 | false |
+| `medium` | Средняя залежь | Side/intermediate zone standard deposit | side | 1 | 800 | 1200 | false |
+| `rich` | Богатая залежь | Contested zone high-value deposit | contested | 1 | 1800 | 2500 | false |
+| `very_rich` | Очень богатая залежь | Contested zone premium deposit | contested | 1 | 3500 | 5000 | false |
+| `infinite` | Бесконечная залежь | Center zone infinite deposit — never depletes | center | **2** | 50000 | 50000 | true |
 
-**Note (PHASER FACT)**: The exact `amountMin`/`amountMax` values for finite classes are in `src/config/resourceClassData.ts` (referenced but not read in this audit). The `resolveResourceRawAmount` helper uses midpoint of [amountMin, amountMax] for finite, `RESOURCE_RAW_AMOUNTS.infinite` (999_999) for infinite.
+**Important footprint correction (PHASER FACT)**: The accepted production six-class `infinite` resource uses `footprint: 2` (a 2×2 deposit). This is distinct from the legacy runtime `infinite` type which uses `footprint: 3`. The production six-class model is the source of truth for Godot map generation.
 
-### 5.3 Placement zones (PHASER FACT, from `generatedMap.ts`)
+**Asset keys (PHASER FACT)**:
+- `very_poor`: `resource_industrial_very_poor_01`
+- `poor`: `resource_industrial_poor_01`
+- `medium`: `resource_industrial_medium_01`
+- `rich`: `resource_industrial_rich_01`
+- `very_rich`: `resource_industrial_very_rich_01`
+- `infinite`: `resource_industrial_infinite_center_2x2_01`
+
+**Amount resolution (PHASER FACT)**: The `resolveResourceRawAmount` helper uses midpoint of `[amountMin, amountMax]` for finite classes, and `RESOURCE_RAW_AMOUNTS.infinite` (999_999) for the legacy infinite type. For the production six-class `infinite`, `amountMin = amountMax = 50000` and `isInfinite = true` (never depletes).
+
+### 5.3 Placement zones (PHASER FACT, from `generatedMap.ts` + `resourceClassData.ts`)
 
 | Zone | Position | Classes used |
 |---|---|---|
@@ -182,6 +194,10 @@ This document extracts baseline data tables from the Phaser project so the Godot
 - PHASER FACT: `handleIdle` searches nearest resource by **harvester position**.
 - GODOT DECISION: Auto-gather scoring should use **HQ/base distance** (Denis direction). Manual targeted resource overrides until depleted, then returns to auto-gather.
 - PHASER FACT: Gather duration = 1000ms, unload duration = 500ms, cargo capacity = 20 raw, harvester speed = 2.5 tiles/sec.
+
+### 5.5 Resource vocabulary (GODOT DECISION)
+
+See `docs/PHASER_TO_GODOT_SYSTEM_MAP.md` §7 "Resource vocabulary" for the full vocabulary table mapping Phaser internal names to recommended Godot internal names and player-facing Russian labels.
 
 ---
 
@@ -267,7 +283,7 @@ This document extracts baseline data tables from the Phaser project so the Godot
 - Completed item does not consume power while waiting to spawn
 - Element and matter costs deducted at enqueue time
 - Cancel: removes item, **no refund**
-- Unit cap: DEFAULT_UNIT_CAP = 10 (builders + harvesters; combat units count toward cap per PR #325)
+- Unit cap: DEFAULT_UNIT_CAP = 10. PHASER FACT: on Phaser main, this covers builders + harvesters only. GODOT DECISION: in Godot, `DEFAULT_UNIT_CAP = 10` should count **all controllable units** (builders + harvesters + combat units). (PHASER PR #325 PROPOSAL: a branch PR extends Phaser to include combat units in the cap, but this is not merged main baseline.)
 
 ### 7.5 What is missing (GODOT DECISION)
 
@@ -312,13 +328,13 @@ This document extracts baseline data tables from the Phaser project so the Godot
 | Starting elements | 0 | Same |
 | Caps | 200/200/200 | Same |
 | HQ base power | 10 | Same |
-| Default unit cap | 10 | Same (combat units count toward cap) |
+| Default unit cap | 10 | GODOT DECISION: count all controllable units (builders + harvesters + combat units) |
 
 ### 8.3 Contradictions
 
 1. **Starter combat tank**: Phaser standard mode strips it (no modular textures loaded). Denis wants it as normal baseline. GODOT DECISION: include starter Wasp+Smoky M0 in normal baseline — Godot has real 3D assets, no texture-loading constraint.
 2. **Harvester auto-search origin**: Phaser searches by harvester position. Denis wants HQ-centered. GODOT DECISION: HQ-centered auto-search.
-3. **Resource naming**: Phaser internal = raw/matter/elementUnits/power. Denis player-facing = minerals/energy/elements. GODOT DECISION: internal names stay; UI labels use Denis vocabulary. Recommend Russian: Сырьё→Минералы, Энергия (unchanged), Элементы, Питание.
+3. **Resource naming**: Phaser internal = raw/matter/elementUnits/power. Denis player-facing = minerals/energy/elements. GODOT DECISION: see vocabulary table in `docs/PHASER_TO_GODOT_SYSTEM_MAP.md` §7. Recommended Godot internal names: `minerals`/`energy`/`element_units`/`power`; player-facing RU: Минералы/Энергия/Элементы/Питание. If Phaser names are kept temporarily for compatibility, they must NOT leak into player-facing UI.
 
 ---
 

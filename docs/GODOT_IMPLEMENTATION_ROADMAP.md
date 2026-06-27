@@ -20,18 +20,23 @@ This document proposes a Godot implementation roadmap after the Phaser source ex
 | Milestone | Name | Size | Depends on |
 |---|---|---|---|
 | GODOT-M0C | Phaser Source Extraction Audit | High | (this PR — docs only) |
-| GODOT-M1 | 3D Asset Proof + Camera/Grid | Very High | M0C |
-| GODOT-M2 | Starting Base Loop | Very High | M1 |
-| GODOT-M3 | Builder + Unit Factory Loop | Very High | M2 |
-| GODOT-M4 | Combat Loop | High+ | M3 |
-| GODOT-M5 | Map/Fog/RTS UX | Very High | M4 |
-| GODOT-M6 | Enemy AI Draft | High+ | M5 |
+| GODOT-M0D | Godot Tooling & Plugin Audit | High | M0C |
+| GODOT-M1 | 3D Asset Proof + Camera/Grid | Very High | M0D |
+| GODOT-M2 | Starting Base + Harvester + Economy | Very High | M1 |
+| GODOT-M3 | Builder Construction + Unit Factory Loop | Very High | M2 |
+| GODOT-M4 | Combat Loop (T1 Slice: Smoky + Railgun) | High+ | M3 |
+| GODOT-M4B | Weapon Mechanics Expansion | High+ | M4 |
+| GODOT-M5A | Map + Fog + Territory | Very High | M4B |
+| GODOT-M5B | RTS UX + Save/Load | Very High | M5A |
+| GODOT-M6 | Enemy AI Draft | High+ | M5B |
 
-**Total estimated effort**: 6 milestones, all High+ or Very High.
+**Total estimated effort**: 9 milestones, all High+ or Very High.
 
-**Critical path**: M0C → M1 → M2 → M3 → M4 → M5 → M6
+**Critical path**: M0C → M0D → M1 → M2 → M3 → M4 → M4B → M5A → M5B → M6
 
 **Stop condition**: If M1 cannot assemble Wasp+Smoky cleanly in 3D, stop and fix the asset pipeline first. Do not build on broken scale/origin/socket/muzzle assumptions.
+
+**Note on M5 split**: M5 was originally one epic milestone bundling map/fog/territory + RTS UX + save/load. It has been split into M5A (map/fog/territory) and M5B (RTS UX + save/load) to keep each PR at a reviewable Very High scope.
 
 ---
 
@@ -65,7 +70,7 @@ Extract accepted Phaser game rules, data configs, and UX decisions into Godot do
 - `src/state/types.ts`, `src/state/createInitialState.ts`, `src/state/updateGameState.ts`
 - `src/state/production.ts`, `src/state/construction.ts`, `src/state/builder.ts`
 - `src/state/generatedMap.ts`, `src/state/visibility.ts`
-- `src/config/coreMechanicsTypes.ts`, `src/config/factionData.ts`, `src/config/bodyData.ts`, `src/config/weaponData.ts`, `src/config/localization.ts`
+- `src/config/coreMechanicsTypes.ts`, `src/config/factionData.ts`, `src/config/bodyData.ts`, `src/config/weaponData.ts`, `src/config/resourceClassData.ts`, `src/config/localization.ts`
 - HUD/input files: `commandCardGrid.ts`, `commandPanelViewModel.ts`, `GameInputController.ts`, `HudMinimap.ts`, `controlGroups.ts`, `unitSelection.ts`
 
 ### Godot files likely affected
@@ -73,17 +78,20 @@ Extract accepted Phaser game rules, data configs, and UX decisions into Godot do
 - `docs/PHASER_TO_GODOT_SYSTEM_MAP.md` (new)
 - `docs/GODOT_DATA_MODEL_BASELINE.md` (new)
 - `docs/GODOT_IMPLEMENTATION_ROADMAP.md` (new)
-- `docs/PROJECT_STATE.md` (update — mark M0C done)
-- `docs/CURRENT_NEXT_STEP.md` (update — next is M1)
+- `docs/GODOT_TOOLING_PLUGIN_AUDIT.md` (new — M0D audit, included in this PR)
+- `docs/PROJECT_STATE.md` (update — mark M0C done, next is M0D then M1)
+- `docs/CURRENT_NEXT_STEP.md` (update — next is M0D)
 
 ### Acceptance criteria
 
-- All three docs exist and are readable Markdown.
+- All four docs exist and are readable Markdown.
 - System map covers all 25 systems listed in PHASER_TO_GODOT_SYSTEM_MAP.md §3.
-- Data model baseline includes all 7 tables (factions, hulls, weapons, resources, buildings, production, starting state).
-- Roadmap has 6 milestones (M1-M6) each with goal/scope/non-goals/source references/acceptance criteria/validation/risks/size.
-- Contradictions section explicitly lists the 5+ open decisions.
+- Data model baseline includes all 7 tables (factions, hulls, weapons, resources, buildings, production, starting state) with correct values from `resourceClassData.ts`.
+- Roadmap has 9 milestones (M0D, M1, M2, M3, M4, M4B, M5A, M5B, M6) each with goal/scope/non-goals/source references/acceptance criteria/validation/risks/size.
+- Tooling audit doc covers 8 categories with at least 8-12 tools evaluated.
+- Contradictions section explicitly lists the open decisions.
 - No "TBD" without explaining what source is missing and what decision is required.
+- `PROJECT_STATE.md` and `CURRENT_NEXT_STEP.md` updated to point at M0D as next step (not stale M0A/M0B).
 
 ### Validation
 
@@ -95,6 +103,70 @@ Extract accepted Phaser game rules, data configs, and UX decisions into Godot do
 
 - Audit may miss Phaser files not in the read list. Mitigation: CODEMAP.md was read first as routing map.
 - Data values may be stale if Phaser repo advanced past the audited commit. Mitigation: shallow clone at latest main was used.
+
+### Estimated size: High
+
+---
+
+## 3B. GODOT-M0D — Godot Tooling & Plugin Audit
+
+**Size**: High (docs-only / tooling decision)
+**Risk**: Medium
+**Depends on**: M0C
+
+### Goal
+
+Evaluate Godot Asset Store / editor addons before starting runtime implementation, and decide which tools are worth adopting for Four Elements. This is an **audit first** — do NOT install plugins in this milestone.
+
+### Scope
+
+- Audit Godot Asset Store / editor addons across 8 categories (see `docs/GODOT_TOOLING_PLUGIN_AUDIT.md`).
+- For each tool, evaluate: potential value, runtime dependency, maintenance risk, Godot 4.7 compatibility, license, and recommendation.
+- Produce a recommendation table in `docs/GODOT_TOOLING_PLUGIN_AUDIT.md`.
+- Default stance: do not install plugins unless they clearly reduce work and have low lock-in.
+- For M1, prefer simple native Godot implementation: custom RTS camera, simple plane/grid, no terrain plugin, no AI plugin, no Git plugin dependency.
+
+### Non-goals
+
+- No plugin installation.
+- No `addons/` directory changes.
+- No `project.godot` plugin activation.
+- No runtime implementation.
+- No asset changes.
+
+### Source references
+
+- Godot Asset Library (https://godotengine.org/asset-library/asset)
+- Godot 4.7 documentation
+- `docs/ASSET_PIPELINE.md` — existing asset pipeline decisions
+- `docs/GODOT_M0_TECHNICAL_SLICE.md` — M0 scope that M0D informs
+
+### Godot files likely affected
+
+- `docs/GODOT_TOOLING_PLUGIN_AUDIT.md` (new — the audit document)
+- `docs/GODOT_IMPLEMENTATION_ROADMAP.md` (this document — link to audit)
+
+### Acceptance criteria
+
+- `docs/GODOT_TOOLING_PLUGIN_AUDIT.md` exists and is readable Markdown.
+- Audit covers at least 8 categories: Git/source control, project visibility/AI assistance, terrain/map editing, camera helpers, GDScript formatting/code quality, state machines/AI behavior, editor readability/custom icons, debugging/logging.
+- At least 8-12 specific tools evaluated in the recommendation table.
+- Each tool has: category, potential value, runtime dependency?, maintenance risk, Godot 4.7 compatibility, recommendation, notes.
+- Decision rule documented: default = do not install; plugins allowed later only if compatible with 4.7, actively maintained, MIT/compatible license, easy to remove, not required for core gameplay unless explicitly approved.
+- M1 explicitly scoped to use native Godot only (no plugins).
+
+### Validation
+
+- Markdown file is readable.
+- No `addons/` directory created.
+- No `project.godot` changes.
+- No runtime files changed.
+
+### Risks
+
+- **Audit scope creep**: Evaluating too many tools delays M1. Mitigation: cap at 8-12 tools across 8 categories; spend max 1-2 hours.
+- **Stale compatibility info**: Godot 4.7 is recent; some addons may not be updated yet. Mitigation: check addon's last update date and Godot version compatibility on Asset Library.
+- **Decision reversal**: A tool rejected in M0D may become useful later. Mitigation: mark decisions as "defer" rather than "reject" where appropriate; allow re-audit at any milestone.
 
 ### Estimated size: High
 
@@ -210,41 +282,44 @@ Prove that the Godot migration gives a cleaner and faster implementation path th
 
 ---
 
-## 5. GODOT-M2 — Starting Base Loop
+## 5. GODOT-M2 — Starting Base + Harvester + Economy
 
 **Size**: Very High
 
 ### Goal
 
-Establish the starting base loop: HQ + 2 harvesters + 1 builder + 1 Wasp+Smoky M0 tank + resource deposits + harvester gather/unload loop + basic economy display.
+Establish the starting base and economy loop: HQ + 2 harvesters + 1 builder + 1 Wasp+Smoky M0 tank + resource deposits + harvester gather/unload loop + economy display. M2 focuses on the **harvester/economy loop only** — no builder construction, no build commands, no units factory.
 
 ### Scope
 
-- Create HQ building scene (3×3 footprint, T1).
+- Create HQ building scene (3×3 footprint, T1). HQ is pre-placed at game start (not built by player).
 - Create harvester unit scene (civil unit, gather/deliver loop).
-- Create builder unit scene (civil unit, construction — placement deferred to M3).
+- Create builder unit scene (civil unit, selectable + movable, but **no construction state machine** — that is M3).
 - Place starting state: HQ at lower-left, 2 harvesters NE of HQ, 1 builder NE of HQ, 1 Wasp+Smoky M0 tank NE of HQ.
 - Place resource deposits near HQ (very_poor/poor/medium classes per Phaser anchor model).
 - Implement harvester state machine: idle → moving-to-resource → gathering → returning-to-hq → unloading → repeat.
 - **HQ-centered auto-search**: harvester auto-gather scoring uses HQ distance, NOT harvester position (Denis direction, contradicts Phaser).
 - Manual resource click override: player clicks specific deposit → harvester targets it until depleted → returns to auto-gather.
-- Implement economy state: raw, matter, elements, power.
-- Implement separator processing (12 raw → 10 matter + 2 elementUnits per 5000ms cycle, 5 power).
-- Implement power system (HQ base 10 + power-plant 15 each).
-- Implement resource display in UI (top-left strip: raw/matter/elements/power).
-- Implement build commands for: separator, raw-storage, matter-storage, element-storage, power-plant (auto-placement near builder — placement logic in M3, but build command wiring here).
-- Implement storage cap bonuses (+200 per storage building).
+- Implement economy state: raw/minerals, matter/energy, element_units/elements, power.
+- Implement separator processing (12 raw → 10 matter + 2 elementUnits per 5000ms cycle, 5 power) — separator is **pre-placed** or placeholder for economy validation.
+- Implement power system (HQ base 10 + power-plant 15 each) — power-plant is **pre-placed** or placeholder for economy validation.
+- Implement storage cap bonuses (+200 per storage building) — storage buildings are **pre-placed** or placeholder.
+- Implement resource display in UI (top-left strip: minerals/energy/elements/power).
 
 ### Non-goals
 
-- Units factory (M3).
+- **Builder construction state machine** (M3) — builder exists as a unit but cannot build.
+- **Build commands** (M3) — no Q/W/E/R/A/F build hotkeys.
+- **Building auto-placement** (M3) — no placement system.
+- **Construction progress / building completion** (M3).
+- **Units factory** (M3).
 - Combat (M4).
-- Map generation (M5 — use fixed test map for M2).
-- Fog of war (M5).
-- Minimap (M5).
-- Command card grid (M5).
-- Control groups (M5).
-- Save/load (M5).
+- Map generation (M5A — use fixed test map for M2).
+- Fog of war (M5A).
+- Minimap (M5B).
+- Command card grid (M5B).
+- Control groups (M5B).
+- Save/load (M5B).
 - Enemy AI (M6).
 - Click-to-place building UX (deferred — auto-placement only).
 - T2/T3 HQ tiers (deferred).
@@ -255,27 +330,26 @@ Establish the starting base loop: HQ + 2 harvesters + 1 builder + 1 Wasp+Smoky M
 - `src/state/createInitialState.ts` — starting state factory, extra harvesters, starter modular combat.
 - `src/state/updateGameState.ts` — harvester state machine, economy tick (`allocatePowerAndProcess`, `recomputePower`).
 - `src/state/types.ts` — `EconomyState`, `HarvesterState`, all economy constants.
-- `src/state/construction.ts` — `BUILDING_CONFIG`, building placement, completion.
 - `src/config/coreMechanicsTypes.ts` — `AcceptedBuildingId`, `BuildingConfig`, `ResourceClassConfig`.
+- `src/config/resourceClassData.ts` — 6-class resource amounts (150-50000).
 - `src/config/localization.ts` — Russian labels for economy, buildings, status.
 - `docs/GODOT_DATA_MODEL_BASELINE.md` §3-9 — extracted data tables.
 
 ### Godot files likely affected
 
-- `scenes/buildings/HQ.tscn` (new)
-- `scenes/buildings/Separator.tscn` (new)
-- `scenes/buildings/RawStorage.tscn` (new)
-- `scenes/buildings/MatterStorage.tscn` (new)
-- `scenes/buildings/ElementStorage.tscn` (new)
-- `scenes/buildings/PowerPlant.tscn` (new)
+- `scenes/buildings/HQ.tscn` (new — pre-placed)
+- `scenes/buildings/Separator.tscn` (new — pre-placed/placeholder for economy validation)
+- `scenes/buildings/PowerPlant.tscn` (new — pre-placed/placeholder)
+- `scenes/buildings/RawStorage.tscn` (new — pre-placed/placeholder)
+- `scenes/buildings/MatterStorage.tscn` (new — pre-placed/placeholder)
+- `scenes/buildings/ElementStorage.tscn` (new — pre-placed/placeholder)
 - `scenes/units/Harvester.tscn` (new)
-- `scenes/units/Builder.tscn` (new)
+- `scenes/units/Builder.tscn` (new — selectable/movable, no construction yet)
 - `scenes/environment/ResourceDeposit.tscn` (new)
 - `scenes/main/GameScene.tscn` (new — main game scene)
 - `scripts/state/GameState.gd` (new — autoload)
 - `scripts/state/Economy.gd` (new)
 - `scripts/state/HarvesterStateMachine.gd` (new)
-- `scripts/state/ConstructionSystem.gd` (new)
 - `scripts/ui/ResourceStrip.gd` (new)
 - `resources/buildings/*.tres` (new — one per building type)
 - `resources/resources/*.tres` (new — one per resource class)
@@ -286,45 +360,47 @@ Establish the starting base loop: HQ + 2 harvesters + 1 builder + 1 Wasp+Smoky M
 - Resources visible near HQ (at least 4 deposits: 2 very_poor, 1 poor, 1 medium).
 - Harvester auto-gathers: moves to nearest resource (by **HQ distance**, not harvester position), gathers 1000ms, returns to HQ, unloads 500ms, repeats.
 - Manual resource click: click deposit → harvester targets it → after depletion, returns to auto-gather.
-- Economy display updates: raw increases when harvester unloads, matter/elements increase when separator processes.
+- Economy display updates: raw/minerals increases when harvester unloads, matter/energy + elements increase when separator processes.
 - Separator processes: consumes 12 raw, produces 10 matter + 2 elementUnits per 5000ms cycle, consumes 5 power.
 - Power display: HQ provides 10, power-plant provides +15 each.
-- Build commands work: select builder → press Q (separator) → building auto-placed near builder → construction progresses → building completed.
 - Storage caps enforced: raw cap 200 (base) + 200 per raw-storage building.
-- Cannot build without sufficient matter (blocked reason shown).
-- Cannot build if no idle builder (blocked reason shown).
-- No crashes on save/load attempt (save/load itself is M5).
+- Builder unit exists, is selectable, can be moved (RMB), but **cannot build** (no construction state machine).
+- No build commands available (Q/W/E/R/A/F do nothing or are unmapped).
+- No crashes on save/load attempt (save/load itself is M5B).
 
 ### Validation
 
-- Manual QA: start game → verify starting state → harvester loop → economy updates → build a separator → verify processing.
+- Manual QA: start game → verify starting state → harvester loop → economy updates → separator processing.
 - Economy invariants: raw + matter + elements never go negative.
-- Power: consumed <= generated (factories/separators pause if insufficient power).
-- Unit cap: cannot produce beyond 10 civil units.
+- Power: consumed <= generated (separators pause if insufficient power).
+- Harvester pathfinding: grid-based A* on flat test map (no navmesh required for M2).
 
 ### Risks
 
-- **Harvester pathfinding**: Godot `NavigationServer3D` may behave differently from Phaser BFS. Mitigation: use `NavigationRegion3D` with baked navmesh; test on flat ground first.
+- **Harvester pathfinding**: Use deterministic grid A* mapped to 3D coordinates (mirrors Phaser BFS). Do NOT use NavigationServer3D/navmesh for M2 — test grid pathfinding on flat ground first; revisit navmesh only if grid proves insufficient.
 - **HQ-centered auto-search**: Contradicts Phaser (harvester-position search). Mitigation: implement as `findNearestResourceFromHq(state, harvester)`; document the decision.
-- **Economy deadlock**: If separator consumes all raw, builder can't build. Mitigation: reserve minimum raw for construction (Phaser doesn't do this — add as Godot improvement).
-- **Building placement**: Auto-placement may fail on crowded maps. Mitigation: ring search up to 5 tiles (same as Phaser `findSpawnPosition`).
+- **Economy deadlock**: If separator consumes all raw, no construction happens in M2 (no builder). Mitigation: separator pauses when raw < 12; no deadlock possible without construction.
+- **Pre-placed buildings**: Pre-placing separator/power-plant/storage for economy validation means M3 must add the ability to build them. Mitigation: pre-placed buildings use the same scenes/resources as M3-built buildings — no rework needed.
 
 ### Estimated size: Very High
 
 ---
 
-## 6. GODOT-M3 — Builder + Unit Factory Loop
+## 6. GODOT-M3 — Builder Construction + Unit Factory Loop
 
 **Size**: Very High
 
 ### Goal
 
-Implement builder construction loop and units factory production: produce builder/harvester/Wasp+Smoky M0 from the factory.
+Implement builder construction loop (build commands, auto-placement, construction progress, building completion) and units factory production (produce builder/harvester/Wasp+Smoky M0 from the factory).
 
 ### Scope
 
 - Implement builder construction state machine: idle → moving-to-site → building → idle.
 - Implement builder-centric auto-placement: builder selects building type → system finds nearest valid tile near builder → builder moves to adjacent tile → construction progresses.
+- Implement build commands: Q=separator, W=raw-storage, E=matter-storage, R=element-storage, A=power-plant, F=units-factory (auto-placement near builder).
+- Implement construction progress: builder arrives at site → progress advances → building completed → builder returns to idle.
+- Implement building completion: register completed building into economy (separator → processing, storage → cap bonus, units-factory → production state).
 - Implement units factory building scene (2×2 footprint, cost 120 matter, 40000ms build time).
 - Implement production queue (limit 2, no refund on cancel).
 - Implement `startUnitProduction(state, factoryTx, factoryTy, request)` for:
@@ -333,7 +409,7 @@ Implement builder construction loop and units factory production: produce builde
   - Wasp+Smoky M0 (45 matter, 10 elements, 25000ms) — structured request `{hullId:'wasp', turretId:'smoky', mod:'m0'}`
 - Implement production tick: factory consumes 4 power while active, progress advances, completed item spawns unit near factory.
 - Implement `spawnCombatUnit(state, tx, ty, request)` — creates `ModularCombatUnit` with `bodyId`, `weaponId`, `mod`, `faction`, `id`.
-- Implement unit cap (DEFAULT_UNIT_CAP=10, includes combat units).
+- Implement unit cap (DEFAULT_UNIT_CAP=10, includes all controllable units: builders + harvesters + combat units — GODOT DECISION).
 - Implement factory production UI: select factory → see production buttons (builder/harvester/wasp-smoky) → click to enqueue.
 - Implement queue display: show progress bars for queue items.
 - Implement cancel queue item (no refund).
@@ -345,12 +421,12 @@ Implement builder construction loop and units factory production: produce builde
 - Dynamic hull+turret cost calculation (deferred — use reserved constants).
 - XP/upgrade system (deferred).
 - Combat (M4).
-- Map generation (M5).
-- Fog of war (M5).
-- Minimap (M5).
-- Command card grid (M5 — use simple buttons for M3).
-- Control groups (M5).
-- Save/load (M5).
+- Map generation (M5A).
+- Fog of war (M5A).
+- Minimap (M5B).
+- Command card grid (M5B — use simple buttons for M3).
+- Control groups (M5B).
+- Save/load (M5B).
 
 ### Source references from Phaser
 
@@ -366,6 +442,7 @@ Implement builder construction loop and units factory production: produce builde
 - `scenes/buildings/UnitsFactory.tscn` (new)
 - `scripts/state/ProductionSystem.gd` (new)
 - `scripts/state/BuilderStateMachine.gd` (new)
+- `scripts/state/ConstructionSystem.gd` (new)
 - `scripts/state/PlacementSystem.gd` (new — auto-placement near builder)
 - `scripts/units/CombatUnit.gd` (new — ModularCombatUnit controller)
 - `scripts/ui/FactoryPanel.gd` (new — simple production buttons, not full two-column panel)
@@ -374,7 +451,10 @@ Implement builder construction loop and units factory production: produce builde
 
 ### Acceptance criteria
 
-- Builder can be selected → build command issued → building auto-placed near builder → builder moves to site → construction progresses → building completed → builder returns to idle.
+- Builder can be selected → build command issued (Q/W/E/R/A/F) → building auto-placed near builder → builder moves to site → construction progresses → building completed → builder returns to idle.
+- Completed separator registers into economy and begins processing.
+- Completed storage building applies cap bonus (+200).
+- Completed units-factory registers into production state.
 - Units factory can be built (cost 120 matter, 40000ms).
 - Select factory → production buttons appear (builder/harvester/wasp-smoky).
 - Click builder button → 40 matter + 10 elements deducted → queue item added → progress bar advances (15000ms) → builder spawns near factory.
@@ -406,48 +486,51 @@ Implement builder construction loop and units factory production: produce builde
 
 ---
 
-## 7. GODOT-M4 — Combat Loop
+## 7. GODOT-M4 — Combat Loop (T1 Slice: Smoky + Railgun)
 
 **Size**: High+
 
 ### Goal
 
-Implement the combat loop: tanks can attack dummy targets, deal damage, destroy targets, and die.
+Implement the **T1 combat slice only**: tanks can attack dummy targets with Smoky (cooldown projectile) and Railgun (wind-up penetration ray), deal damage using the target's armor, destroy targets, and die. All other weapon mechanics are deferred to M4B.
 
 ### Scope
 
 - Implement `CombatSystem` autoload: damage calculation, hit detection, death handling.
-- Implement `DamageCalculator`: `finalDamage = max(rawDamage - armor, rawDamage * minDamagePercent)`.
-- Implement projectile spawning from `MuzzleSocket`.
-- Implement hit detection via Godot 3D physics (`RayCast3D` for instant hits, `Area3D` for projectiles).
-- Implement target acquisition: RMB on enemy → tank acquires target → turret rotates toward target → fires when in range and turret aligned.
-- Implement weapon fire types: `cooldown` (smoky), `wind_up` (railgun), `canister_stream` (flamethrower/freeze/isida), `overheat` (vulcan), `near_continuous` (twins), `magazine` (ricochet), `drum` (hammer).
-- Implement continuous damage (`tickContinuousDamage` for stream weapons).
-- Implement splash damage (thunder: radius 1.5, falloff).
-- Implement penetration (railgun: max 3 targets).
-- Implement heal beam (isida: heal ally, no damage).
-- Implement HP/death: unit HP reaches 0 → unit destroyed → removed from scene.
-- Implement dummy target scene (static `StaticBody3D` with HP, no AI).
+- Implement `DamageCalculator`: `finalDamage = max(rawDamage - targetArmor, rawDamage * targetMinDamagePercent)` — uses **target's** armor and minDamagePercent, not attacker's.
+- Implement projectile spawning from `MuzzleSocket` (Smoky: projectile; Railgun: instant ray).
+- Implement hit detection via Godot 3D physics (`RayCast3D` for railgun instant hit, `Area3D` for smoky projectile).
+- Implement target acquisition: RMB on enemy/dummy → tank acquires target → turret rotates toward target → fires when in range and turret aligned.
+- Implement **T1 weapon fire types only**:
+  - Smoky: `cooldown` fire type, directDamage 16 (M0), cooldown 900ms, projectile travels to target.
+  - Railgun: `wind_up` fire type, directDamage 32 (M0), windUp 800ms, cooldown 3000ms, penetration (max 3 targets in a line via RayCast3D).
+- Implement penetration (railgun: max 3 targets along the ray).
+- Implement HP/death: unit/dummy HP reaches 0 → destroyed → removed from scene.
+- Implement dummy target scene (static `StaticBody3D` with HP, armor, minDamagePercent — no AI).
 - Implement basic win/lose placeholder: destroy all dummy targets → "Victory" message.
 
 ### Non-goals
 
+- **All non-T1 weapon mechanics** (deferred to M4B): Thunder splash, Flamethrower stream, Freeze stream/slow, Isida heal beam, Vulcan overheat, Twins near-continuous, Ricochet magazine/bounce, Hammer drum/shotgun.
+- **Splash damage** (deferred to M4B — Thunder).
+- **Continuous damage / stream weapons** (deferred to M4B — Flamethrower/Freeze/Isida).
+- **Heal beam** (deferred to M4B — Isida).
+- **Overheat mechanic** (deferred to M4B — Vulcan).
 - Enemy AI (M6).
 - Attack-move / formations / patrol / hold-position.
 - Shift-queue commands.
 - Multi-unit target coordination (each tank targets independently).
 - Full VFX polish (basic projectiles only).
 - Audio/SFX.
-- All 7 hulls (Wasp + Hunter for T1).
-- All 10 turrets (Smoky + Railgun for T1).
+- All 7 hulls (Wasp only for M4 minimal validation; Hunter acceptable if already exists from M3, but not required).
 - M1/M2/M3 upgrades (M0 only).
 - XP system (deferred).
-- Fog of war affecting combat (M5).
+- Fog of war affecting combat (M5A).
 
 ### Source references from Phaser
 
-- `src/config/weaponData.ts` — all 10 weapon configs (fire type, damage, cooldown, range, profile-specific).
-- `src/config/bodyData.ts` — HP/armor arrays for all 7 hulls.
+- `src/config/weaponData.ts` — Smoky and Railgun configs (fire type, damage, cooldown, range, profile-specific).
+- `src/config/bodyData.ts` — HP/armor arrays for Wasp (and Hunter if used).
 - `src/state/blockoutDamage.ts` — damage application, hit detection (reference only — Godot uses 3D physics, not screen-space math).
 - `src/state/combatHitModel.ts` — projected hit detection (reference for damage model, not geometry).
 - `src/state/weaponFireCoordinator.ts` — fire coordination logic.
@@ -458,71 +541,151 @@ Implement the combat loop: tanks can attack dummy targets, deal damage, destroy 
 
 - `scripts/combat/CombatSystem.gd` (new — autoload)
 - `scripts/combat/DamageCalculator.gd` (new)
-- `scripts/combat/Projectile.gd` (new — reusable projectile scene)
-- `scripts/combat/HitDetector.gd` (new — RayCast3D/Area3D wrapper)
-- `scripts/units/TurretController.gd` (update — add target acquisition + fire logic)
+- `scripts/combat/Projectile.gd` (new — reusable projectile scene for Smoky)
+- `scripts/combat/HitDetector.gd` (new — RayCast3D for Railgun, Area3D for Smoky projectile)
+- `scripts/units/TurretController.gd` (update — add target acquisition + fire logic for Smoky + Railgun)
 - `scripts/units/CombatUnit.gd` (update — add HP, death, target management)
 - `scenes/units/DummyTarget.tscn` (new)
 - `scenes/effects/Projectile.tscn` (new)
-- `resources/weapons/*.tres` (new — one per weapon type, M0 stats)
+- `resources/weapons/smoky.tres` (new — M0 stats)
+- `resources/weapons/railgun.tres` (new — M0 stats)
 
 ### Acceptance criteria
 
 - Wasp+Smoky M0 tank can attack dummy target.
 - RMB on dummy → turret rotates toward dummy → fires when aligned and in range.
-- Projectile spawns from MuzzleSocket, travels toward target, hits target.
-- Damage applied: `finalDamage = max(16 - 2, 16 * 0.25) = 14` (Wasp M0 armor 2, minDamagePercent 0.25).
+- Smoky projectile spawns from MuzzleSocket, travels toward target, hits target.
+- Railgun wind-up plays → instant ray from MuzzleSocket → hits first target → penetrates up to 3 targets in a line.
+- **Damage formula uses target's armor** (not attacker's):
+  - Dummy target defined with: `armor = 0`, `minDamagePercent = 1.0` (no damage reduction).
+  - Smoky M0 directDamage = 16 → `finalDamage = max(16 - 0, 16 * 1.0) = 16`.
+  - If target is a Wasp M0 (armor 2, minDamagePercent 0.25): `finalDamage = max(16 - 2, 16 * 0.25) = max(14, 4) = 14`.
 - Dummy HP decreases; at 0 HP, dummy is destroyed (removed from scene).
-- Multiple weapon types work: smoky (cooldown), railgun (wind_up + penetration), thunder (splash), flamethrower (stream), vulcan (overheat), twins (near_continuous), ricochet (magazine), hammer (drum), isida (heal ally), freeze (stream + slow).
-- Heal beam (isida) heals allied tank, does not damage.
-- Splash (thunder) damages all targets within 1.5 tiles of impact.
-- Penetration (railgun) hits up to 3 targets in a line.
 - Tank death: HP 0 → unit removed from scene → selection cleared if selected.
 - "Victory" message when all dummy targets destroyed.
 
 ### Validation
 
-- Manual QA: spawn tank + dummy → attack → verify damage/HP/death.
-- Damage formula test: `finalDamage = max(rawDamage - armor, rawDamage * minDamagePercent)`.
-- Splash radius test: targets within radius take damage, outside do not.
-- Penetration test: ray hits up to 3 targets in order.
-- Heal test: isida heals ally, does not damage enemy.
+- Manual QA: spawn Wasp+Smoky tank + dummy → attack → verify damage/HP/death.
+- Damage formula test: `finalDamage = max(rawDamage - targetArmor, rawDamage * targetMinDamagePercent)`.
+- Penetration test (Railgun): ray hits up to 3 targets in order.
+- Turret alignment test: turret does not fire until within threshold (e.g. 5 degrees) of target.
 
 ### Risks
 
 - **3D hit detection vs Phaser screen-space**: Phaser uses screen-space geometry; Godot uses 3D physics. Results may differ for edge cases (glancing hits, friendly fire). Mitigation: use `Area3D` overlap for projectiles; `RayCast3D` for instant-hit weapons.
 - **Turret alignment**: Turret must be aligned with target before firing. Mitigation: check `turretAngle` vs `angleToTarget` within threshold (e.g. 5 degrees).
-- **Continuous damage timing**: Stream weapons (flamethrower/freeze/isida) deal damage per tick, not per shot. Mitigation: use `tickContinuousDamage` pattern from Phaser (cadence check via `lastDamageTickAt`).
-- **Overheat mechanic**: Vulcan heat accumulation must be server-authoritative (no client-side only). Mitigation: track heat in `CombatUnit` state, not in turret node.
+- **Damage formula confusion**: Damage must use **target's** armor/minDamagePercent, not attacker's. Mitigation: `DamageCalculator` takes `(rawDamage, targetArmor, targetMinDamagePercent)` — attacker stats are not inputs to damage reduction.
+- **Railgun penetration edge cases**: Ray may hit fewer than 3 targets if targets are not in a line. Mitigation: penetration count is a maximum, not a guarantee.
 
 ### Estimated size: High+
 
 ---
 
-## 8. GODOT-M5 — Map/Fog/RTS UX
+## 7B. GODOT-M4B — Weapon Mechanics Expansion
 
-**Size**: Very High
+**Size**: High+
+**Depends on**: M4
 
 ### Goal
 
-Implement map generation, fog of war, and full RTS UX (minimap, command card grid, control groups, selection, save/load).
+Expand combat to support all remaining weapon fire types beyond the T1 Smoky + Railgun slice implemented in M4.
 
 ### Scope
 
-- Implement `MapGenerator`: deterministic seed (Mulberry32 or Godot `RandomNumberGenerator`), sizes (small 32×32, standard 48×48, large 64×64), patch-based terrain, anchor-based 6-class resource placement, HQ at lower-left, 1 builder NE of HQ, center infinite deposit.
-- Implement mirrored map generation for PvP fairness (mirror one half).
-- Implement fog of war: three-state tile (unexplored/explored/visible), diamond radius vision, full recompute per frame. Vision sources: HQ (8), buildings (per config), builders (4), harvesters (5). Purple faction +1 to all.
-- Implement territory layer: gradual spread from owned buildings, max radius 10, 45-60s for 2×2 building, does not block construction.
-- Implement minimap: `SubViewport` camera, click-to-center, drag-to-pan, fog layer, selection highlights, pings.
-- Implement command card grid: 4×3 grid (Q W E R / A S D F / Z X C V), context-aware (builder/harvester/factory/multi-select/none).
-- Implement control groups: Ctrl+1-9 assign, 1-9 recall, double-tap centers camera.
-- Implement selection: LMB select, Shift+click toggle, drag-box multi-select, double-click same-type.
-- Implement RTS controls: LMB=select only, RMB=command (move/harvest/attack), S=stop, Esc=priority chain (cancel → deselect → close overlay → pause).
-- Implement save/load: Godot resource serialization, versioned saves, migration helpers.
-- Implement full HUD: bottom bar (200px safe-area), resource strip (top-left), selection panel, queue display, feedback/status lane.
+- Implement splash damage (Thunder: radius 1.5, falloff, selfDamageScale 0.3).
+- Implement continuous damage / stream weapons (Flamethrower: DPS 24, canister; Freeze: DPS 12 + slow effect).
+- Implement heal beam (Isida: healPerSecond 20, target ally, no damage).
+- Implement overheat mechanic (Vulcan: heatPerShot, maxHeat, cooling, overheatPenalty, spinUp).
+- Implement near-continuous fire (Twins: cooldown 650ms, plasma projectiles).
+- Implement magazine + bounce (Ricochet: stockSize 4-6, regen, bounce on hit).
+- Implement drum/shotgun burst (Hammer: volleyCount 3, pelletCount 5, delayBetweenVolleys, reload).
+- Add weapon resources for all 8 expanded weapons (M0 stats).
+- Add VFX routing per `vfxProfileKey`.
 
 ### Non-goals
 
+- Enemy AI (M6).
+- Attack-move / formations / patrol / hold-position.
+- M1/M2/M3 weapon upgrades (M0 only for M4B).
+- XP system (deferred).
+- Fog of war affecting combat (M5A).
+- Audio/SFX.
+
+### Source references from Phaser
+
+- `src/config/weaponData.ts` — all 10 weapon configs (fire type, damage, cooldown, profile-specific).
+- `src/state/blockoutDamage.ts` — `tickContinuousDamage`, `findSplashTargets`, `findConeTargets`, `findBeamTargets`, etc.
+- `src/state/weaponFireCoordinator.ts` — fire coordination for all fire types.
+- `docs/GODOT_DATA_MODEL_BASELINE.md` §4 — full weapon data table.
+
+### Godot files likely affected
+
+- `scripts/combat/CombatSystem.gd` (update — add splash, stream, overheat, magazine, drum handlers)
+- `scripts/combat/StreamWeaponController.gd` (new — for canister_stream weapons)
+- `scripts/combat/OverheatController.gd` (new — for Vulcan)
+- `scripts/combat/MagazineController.gd` (new — for Ricochet)
+- `scripts/combat/DrumController.gd` (new — for Hammer)
+- `scripts/combat/HealBeam.gd` (new — for Isida)
+- `resources/weapons/thunder.tres`, `flamethrower.tres`, `freeze.tres`, `isida.tres`, `vulcan.tres`, `twins.tres`, `ricochet.tres`, `hammer.tres` (new)
+
+### Acceptance criteria
+
+- Thunder: splash damage applied to all targets within 1.5 tiles of impact, with falloff.
+- Flamethrower: continuous DPS while fireHeld, canister drains/regens.
+- Freeze: continuous DPS + slow effect on target.
+- Isida: heal beam on ally, no damage to enemy.
+- Vulcan: overheat mechanic — heat accumulates per shot, overheats at maxHeat, penalizes, cools down.
+- Twins: near-continuous plasma projectiles, cooldown 650ms.
+- Ricochet: magazine of 4-6 shots, regenerates over time, bounces on hit.
+- Hammer: drum burst — 3 volleys of 5 pellets, delay between volleys, reload after.
+- All weapons fire from MuzzleSocket.
+- All weapons use `DamageCalculator` with target's armor.
+
+### Validation
+
+- Manual QA: spawn tank + dummy for each weapon type → verify mechanic works.
+- Splash radius test: targets within radius take damage, outside do not.
+- Heal test: Isida heals ally, does not damage enemy.
+- Overheat test: Vulcan overheats after N shots, penalizes, cools down.
+- Magazine test: Ricochet depletes stock, regenerates, bounces.
+
+### Risks
+
+- **Continuous damage timing**: Stream weapons deal damage per tick, not per shot. Mitigation: use `tickContinuousDamage` pattern from Phaser (cadence check via `lastDamageTickAt`).
+- **Overheat balance**: Heat accumulation/cooldown must be server-authoritative. Mitigation: track heat in `CombatUnit` state, not in turret node.
+- **VFX complexity**: 8 new weapon VFX profiles. Mitigation: route via `vfxProfileKey` to a `VFXController` child node; implement one profile at a time.
+- **Magazine/bounce edge cases**: Ricochet bounce may hit friendly units or bounce off-map. Mitigation: clamp bounce count, friendly-fire rule.
+
+### Estimated size: High+
+
+---
+
+## 8. GODOT-M5A — Map + Fog + Territory
+
+**Size**: Very High
+**Depends on**: M4B
+
+### Goal
+
+Implement deterministic map generation (including mirrored maps for PvP fairness), fog of war, and territory spread. This is the first half of the original M5 — it focuses on the world/map layer.
+
+### Scope
+
+- Implement `MapGenerator`: deterministic seed (Mulberry32 or Godot `RandomNumberGenerator`), sizes (small 32×32, standard 48×48, large 64×64), patch-based terrain, anchor-based 6-class resource placement, HQ at lower-left, 1 builder NE of HQ, center infinite deposit (footprint 2).
+- Implement mirrored map generation for PvP fairness (mirror one half).
+- Implement fog of war: three-state tile (unexplored/explored/visible), diamond radius vision, full recompute per frame. Vision sources: HQ (8), buildings (per config), builders (4), harvesters (5). Purple faction +1 to all.
+- Implement territory layer: gradual spread from owned buildings, max radius 10, 45-60s for 2×2 building, does not block construction.
+
+### Non-goals
+
+- Minimap (M5B).
+- Command card grid (M5B).
+- Control groups (M5B).
+- Selection model / drag-box (M5B).
+- Input routing / RTS controls (M5B).
+- Save/load (M5B).
+- Full HUD (M5B).
 - Enemy AI (M6).
 - Attack-move / formations / patrol / hold-position.
 - Shift-queue commands.
@@ -536,6 +699,75 @@ Implement map generation, fog of war, and full RTS UX (minimap, command card gri
 
 - `src/state/generatedMap.ts` — map generation, Mulberry32, anchor-based resources, validation.
 - `src/state/visibility.ts` — fog/vision system, `VisionState`, `collectVisionSources`, `recomputeVisibility`.
+- `docs/GODOT_DATA_MODEL_BASELINE.md` §5, §10 — resource class data + vision constants.
+
+### Godot files likely affected
+
+- `scripts/state/MapGenerator.gd` (new)
+- `scripts/state/FogOfWar.gd` (new)
+- `scripts/state/TerritorySystem.gd` (new)
+- `scenes/environment/MapRoot.tscn` (new — map container)
+
+### Acceptance criteria
+
+- Map generation: seed "test" + standard size → deterministic 48×48 map with HQ at (4,41), resources near HQ, center infinite deposit (footprint 2).
+- Mirrored map: two player HQs at mirrored positions, resources mirrored.
+- Fog of war: unexplored tiles black, explored tiles dimmed, visible tiles clear. HQ provides vision radius 8.
+- Territory: building placement → territory spreads gradually over 45-60s, max radius 10, does not block construction.
+- Map determinism: same seed → same map.
+
+### Validation
+
+- Manual QA: generate map → verify resources/HQ/center deposit → fog/vision → territory spread.
+- Map determinism: same seed → same map.
+- Fog: no vision through unexplored tiles.
+- Territory: does not block construction.
+
+### Risks
+
+- **Mirrored map fairness**: Mirror may not produce perfectly fair maps if terrain patches are random. Mitigation: generate one half, mirror it.
+- **Fog performance**: Full recompute per frame may be slow for large maps (64×64 = 4096 tiles × N sources). Mitigation: dirty-flag recompute (only when sources change), incremental update.
+- **Territory gradual spread**: Phaser doesn't implement this. Mitigation: use wave-front propagation (BFS from owned buildings, one cell per N ms).
+
+### Estimated size: Very High
+
+---
+
+## 8B. GODOT-M5B — RTS UX + Save/Load
+
+**Size**: Very High
+**Depends on**: M5A
+
+### Goal
+
+Implement the full RTS UX layer: minimap, command card grid, control groups, selection, input routing, HUD, and save/load. This is the second half of the original M5.
+
+### Scope
+
+- Implement minimap: `SubViewport` camera, click-to-center, drag-to-pan, fog layer, selection highlights, pings.
+- Implement command card grid: 4×3 grid (Q W E R / A S D F / Z X C V), context-aware (builder/harvester/factory/multi-select/none).
+- Implement control groups: Ctrl+1-9 assign, 1-9 recall, double-tap centers camera.
+- Implement selection: LMB select, Shift+click toggle, drag-box multi-select, double-click same-type.
+- Implement RTS controls: LMB=select only, RMB=command (move/harvest/attack), S=stop, Esc=priority chain (cancel → deselect → close overlay → pause).
+- Implement save/load: Godot resource serialization, versioned saves, migration helpers.
+- Implement full HUD: bottom bar (200px safe-area), resource strip (top-left), selection panel, queue display, feedback/status lane.
+
+### Non-goals
+
+- Map generation (M5A).
+- Fog of war (M5A).
+- Territory (M5A).
+- Enemy AI (M6).
+- Attack-move / formations / patrol / hold-position.
+- Shift-queue commands.
+- Audio/SFX/music.
+- Multiplayer.
+- Tutorial.
+- Mobile/touch.
+- Multi-language beyond Russian.
+
+### Source references from Phaser
+
 - `src/phaser/ui/hud/HudMinimap.ts` + `minimapViewModel.ts` — minimap renderer + view model.
 - `src/phaser/ui/hud/commandCardGrid.ts` + `commandPanelViewModel.ts` — command card grid + view model.
 - `src/state/controlGroups.ts` — `ControlGroupManager`.
@@ -544,13 +776,9 @@ Implement map generation, fog of war, and full RTS UX (minimap, command card gri
 - `src/state/commandRouter.ts` — `routeLmbClick`, `routeRmbClick`, `routeSKey`, `routeEscKey`.
 - `src/phaser/ui/hud/hudLayout.ts` — HUD layout constants.
 - `src/state/saveGame.ts` — save/load reference.
-- `docs/GODOT_DATA_MODEL_BASELINE.md` §10-11 — vision/movement constants.
 
 ### Godot files likely affected
 
-- `scripts/state/MapGenerator.gd` (new)
-- `scripts/state/FogOfWar.gd` (new)
-- `scripts/state/TerritorySystem.gd` (new)
 - `scripts/state/SelectionManager.gd` (new — autoload)
 - `scripts/state/ControlGroupManager.gd` (new — autoload)
 - `scripts/state/SaveSystem.gd` (new — autoload)
@@ -566,10 +794,6 @@ Implement map generation, fog of war, and full RTS UX (minimap, command card gri
 
 ### Acceptance criteria
 
-- Map generation: seed "test" + standard size → deterministic 48×48 map with HQ at (4,41), resources near HQ, center infinite deposit.
-- Mirrored map: two player HQs at mirrored positions, resources mirrored.
-- Fog of war: unexplored tiles black, explored tiles dimmed, visible tiles clear. HQ provides vision radius 8.
-- Territory: building placement → territory spreads gradually over 45-60s, max radius 10.
 - Minimap: click to center camera, drag to pan, fog layer visible, selection highlights pulse.
 - Command card: select builder → Q=separator, W=raw-storage, E=matter-storage, R=element-storage, A=power-plant, F=units-factory, S=stop. Select factory → production buttons appear.
 - Control groups: Ctrl+1 assigns selected units → 1 recalls → double-tap 1 centers camera.
@@ -580,17 +804,12 @@ Implement map generation, fog of war, and full RTS UX (minimap, command card gri
 
 ### Validation
 
-- Manual QA: generate map → verify resources/HQ/center deposit → fog/vision → minimap → command card → control groups → save/load.
-- Map determinism: same seed → same map.
-- Fog: no vision through unexplored tiles.
+- Manual QA: minimap → command card → control groups → save/load.
 - Save/load: round-trip preserves all state.
 - Control groups: 9 groups, double-tap centering works.
 
 ### Risks
 
-- **Mirrored map fairness**: Mirror may not produce perfectly fair maps if terrain patches are random. Mitigation: generate one half, mirror it.
-- **Fog performance**: Full recompute per frame may be slow for large maps (64×64 = 4096 tiles × N sources). Mitigation: dirty-flag recompute (only when sources change), incremental update.
-- **Territory gradual spread**: Phaser doesn't implement this. Mitigation: use wave-front propagation (BFS from owned buildings, one cell per N ms).
 - **Save/load compatibility**: Godot resource serialization may change between versions. Mitigation: version field + migration helpers (same pattern as Phaser).
 - **Input routing complexity**: Phaser's `GameInputController` is 1352 lines. Mitigation: split into `InputRouter` (pure routing) + `InputController` (Phaser/Godot adapter).
 
@@ -601,6 +820,7 @@ Implement map generation, fog of war, and full RTS UX (minimap, command card gri
 ## 9. GODOT-M6 — Enemy AI Draft
 
 **Size**: High+
+**Depends on**: M5B
 
 ### Goal
 
@@ -618,7 +838,7 @@ Implement a basic enemy AI that can gather resources, build a base, produce unit
 - Implement AI factory control: produce combat units based on difficulty.
 - Implement AI combat control: acquire targets, move to attack, retreat when low HP.
 - Implement AI win/lose: destroy player HQ = AI wins; player destroys AI HQ = player wins.
-- Implement "no enemy AI before playable loop" rule: AI only activates after M1-M5 are stable.
+- Implement "no enemy AI before playable loop" rule: AI only activates after M1-M5B are stable.
 
 ### Non-goals
 
@@ -679,17 +899,23 @@ Implement a basic enemy AI that can gather resources, build a base, produce unit
 ## 10. Milestone dependency graph
 
 ```text
-M0C (audit)
+M0C (Phaser source extraction audit)
+  ↓
+M0D (Godot tooling & plugin audit)
   ↓
 M1 (3D asset proof + camera/grid)
   ↓
-M2 (starting base loop)
+M2 (starting base + harvester + economy)
   ↓
-M3 (builder + unit factory loop)
+M3 (builder construction + unit factory loop)
   ↓
-M4 (combat loop)
+M4 (combat loop — T1 slice: Smoky + Railgun)
   ↓
-M5 (map/fog/RTS UX)
+M4B (weapon mechanics expansion)
+  ↓
+M5A (map + fog + territory)
+  ↓
+M5B (RTS UX + save/load)
   ↓
 M6 (enemy AI draft)
 ```
@@ -721,10 +947,11 @@ All milestones are sequential — no parallelism. Each milestone depends on the 
 - No combined hull×turret production matrix.
 - No number keys 1-9 for build commands (control groups only).
 - No click-to-place building UX (auto-placement only, unless Denis later approves).
-- No enemy AI before playable loop is stable (M1-M5).
+- No enemy AI before playable loop is stable (M1-M5B).
 - No multiplayer.
 - No mobile/touch.
 - No audio/SFX/music (deferred).
+- No plugin installation before M0D audit (M0D is docs-only; plugins only allowed after explicit approval per M0D decision rule).
 
 ---
 

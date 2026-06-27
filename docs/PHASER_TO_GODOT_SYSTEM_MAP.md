@@ -274,7 +274,7 @@ Data configs:
 - 3D Tank scene (hull mesh + turret mesh + sockets)
 - Orthographic/isometric camera
 - 3D ground/grid
-- 3D pathfinding (NavigationServer3D)
+- Grid-based pathfinding (deterministic A* on tile grid, mapped to 3D world coordinates)
 - 3D hit detection (RayCast3D, Area3D)
 - Godot Control UI (HUD, command card, minimap, selection)
 - Godot InputMap (keyboard + mouse)
@@ -283,6 +283,8 @@ Data configs:
 - Map generator (3D tiles)
 - Fog of war (3D visibility)
 ```
+
+**Pathfinding note (GODOT DECISION)**: Start with deterministic grid pathfinding / A* mapped to 3D world coordinates (mirrors Phaser's BFS-on-tile-grid approach). Use `NavigationServer3D`/navmesh **only if** it proves simpler after M1/M2 validation. Do not lock M1/M2 to navmesh — the RTS grid/tile gameplay is more naturally served by grid A* and navmesh adds baking/maintenance overhead that is not justified for a tile-based RTS.
 
 ---
 
@@ -306,8 +308,19 @@ Data configs:
 
 - PHASER FACT: Internal names are `raw`, `matter`, `elementUnits`, `power`. UI labels (from `localization.ts`) are `hud_raw='Сырьё'`, `hud_matter='Энергия'`, `hud_power='Питание'`.
 - DENIS DIRECTION: Player-facing vocabulary should be `minerals`, `energy`, `elements`.
-- GODOT DECISION: Keep Phaser internal names (raw/matter/elementUnits/power) for code clarity; map to player-facing labels in UI only. Recommend: `raw`→"Минералы", `matter`→"Энергия", `elementUnits`→"Элементы", `power`→"Питание".
-- Status: **OPEN** — needs Denis confirmation on exact Russian labels.
+- GODOT DECISION: Use the vocabulary table below. Recommended Godot internal names align with Denis's player-facing vocabulary to avoid confusion. If Phaser names are kept temporarily for compatibility, they must NOT leak into player-facing UI.
+- Status: **OPEN** — needs Denis confirmation on exact Russian labels and whether to rename internal fields or keep Phaser names as a temporary compatibility layer.
+
+#### 7. Resource vocabulary (GODOT DECISION)
+
+| Concept | Phaser internal | Recommended Godot internal | Player-facing RU | Notes |
+|---|---|---|---|---|
+| gathered world resource | `raw` | `minerals` or `raw_minerals` | Минералы | gathered by harvesters |
+| processed build/production resource | `matter` | `energy` | Энергия | produced by separator |
+| faction element resource | `elementUnits` | `element_units` / `elements` | Элементы | 10 elementUnits = 1 displayed element if preserved |
+| building power capacity | `power` | `power` | Питание | generated/consumed by buildings |
+
+**Compatibility note**: If the Godot codebase initially keeps Phaser internal names (`raw`/`matter`/`elementUnits`/`power`) for faster data porting, this must be marked as a **temporary legacy naming decision** and the names must NOT appear in any player-facing UI. A rename pass should be scheduled once the data layer is stable.
 
 ### 6.4 T2/T3 unlock table
 
