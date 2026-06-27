@@ -1,0 +1,96 @@
+{
+  "type": "four_elements_godot_asset_metadata",
+  "asset_kind": "turret",
+  "asset_id": "smoky",
+  "source_3ds": "D:\\Desktop\\Модели\\Пушки\\3дс\\Smoky_01.3ds",
+  "geometry_source": "Smoky_01.3ds",
+  "mod_range": [
+    "m0",
+    "m1"
+  ],
+  "importer": "import_scene.max3ds",
+  "normalization": {
+    "root_policy": "pivot_at_origin",
+    "pivot_source_object": "Box02",
+    "pivot_local_subtracted_from_vertices": [
+      0.0,
+      0.0,
+      -3.8e-05
+    ],
+    "bbox_before_world": {
+      "min": [
+        211.91741943359375,
+        -2638.170166015625,
+        -4.9591064453125e-05
+      ],
+      "max": [
+        343.9174499511719,
+        -2233.917724609375,
+        78.86203002929688
+      ],
+      "center": [
+        277.91741943359375,
+        -2436.0439453125,
+        39.430992126464844
+      ],
+      "size": [
+        132.00003051757812,
+        404.25244140625,
+        78.86207580566406
+      ]
+    },
+    "bbox_after_local": {
+      "min": [
+        -66.0,
+        -115.500244140625,
+        -1.1444091796875e-05
+      ],
+      "max": [
+        66.0,
+        280.5,
+        71.36751556396484
+      ],
+      "center": [
+        0.0,
+        82.4998779296875,
+        35.683753967285156
+      ],
+      "size": [
+        132.0,
+        396.000244140625,
+        71.36752319335938
+      ]
+    }
+  },
+  "markers": {
+    "TurretPivot": {
+      "source_object": "Box02",
+      "source_policy": "Box02 if present, else Box01, else turret origin",
+      "local_position": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "MuzzleSocket": {
+      "source_object": "muzzle01",
+      "source_policy": "muzzle/fire object origin relative to pivot",
+      "local_position": [
+        -0.027405,
+        281.712891,
+        44.777828
+      ]
+    }
+  },
+  "uv_layers": [
+    "UVMap"
+  ],
+  "textures_expected": {
+    "cyan": "assets/textures/turrets/smoky/cyan/m0.png",
+    "green": "assets/textures/turrets/smoky/green/m0.png",
+    "yellow": "assets/textures/turrets/smoky/yellow/m0.png",
+    "purple": "assets/textures/turrets/smoky/purple/m0.png"
+  },
+  "glb": "D:\\Desktop\\Модели\\godot_asset_pipeline_m0g\\assets\\models\\turrets\\smoky\\smoky_01.glb",
+  "warnings": []
+}
