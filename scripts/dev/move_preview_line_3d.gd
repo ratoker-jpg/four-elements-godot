@@ -26,9 +26,9 @@ func show_preview(from_position: Vector3, to_position: Vector3) -> void:
 	if _line == null:
 		return
 
-	var from := Vector3(from_position.x, from_position.y + lift_height, from_position.z)
-	var to := Vector3(to_position.x, to_position.y + lift_height, to_position.z)
-	var distance := from.distance_to(to)
+	var from: Vector3 = Vector3(from_position.x, from_position.y + lift_height, from_position.z)
+	var to: Vector3 = Vector3(to_position.x, to_position.y + lift_height, to_position.z)
+	var distance: float = from.distance_to(to)
 	if distance < 0.001:
 		hide_preview()
 		return
@@ -45,7 +45,7 @@ func show_preview(from_position: Vector3, to_position: Vector3) -> void:
 	_line.visible = true
 
 	# Position at midpoint and look_at the target so the box's -Z axis points at it.
-	var midpoint := from.lerp(to, 0.5)
+	var midpoint: Vector3 = from.lerp(to, 0.5)
 	_line.global_position = midpoint
 	_line.look_at(to, Vector3.UP)
 
@@ -68,8 +68,13 @@ func _process(_delta: float) -> void:
 		hide_preview()
 		return
 
-	var from := _tracked_unit.global_position
-	var to := _tracked_unit.get_move_target()
+	var tracked_unit_3d: Node3D = _tracked_unit as Node3D
+	if tracked_unit_3d == null:
+		hide_preview()
+		return
+
+	var from: Vector3 = tracked_unit_3d.global_position
+	var to: Vector3 = _tracked_unit.get_move_target()
 	show_preview(from, to)
 
 func _ensure_line() -> void:
