@@ -1,22 +1,9 @@
 extends Node
 
-# M1D right-click move command controller, polished in M1E.
-# Issues move commands to the currently selected unit and shows:
-# - a fading target marker at the clicked ground position
-# - a straight-line preview from the selected tank to its move target
-#
-# M1E additions:
-# - drives MoveTargetMarker3D for clearer right-click feedback
-# - drives MovePreviewLine3D for a straight-line move preview
-# - keeps the legacy DebugCommandTarget sphere hidden by default
-# - wires move_finished to hide the preview when the tank stops
-
 @export var camera_path: NodePath
 @export var selection_controller_path: NodePath
 @export var ray_length := 5000.0
 @export var show_debug_target_marker := false
-# M1E: optional node paths to the dev marker/preview nodes. If unset, the
-# controller still works — it just skips the visual feedback.
 @export var move_target_marker_path: NodePath
 @export var move_preview_line_path: NodePath
 
@@ -107,22 +94,23 @@ func _show_debug_target(world_position: Vector3) -> void:
 	if show_debug_target_marker:
 		debug_target_marker.global_position = world_position + Vector3.UP * 12.0
 
-# M1E: drive the dev target marker if it is wired in the scene.
 func _show_move_target_marker(world_position: Vector3) -> void:
 	if move_target_marker == null or not move_target_marker.has_method("show_marker"):
 		return
 	move_target_marker.show_marker(world_position)
 
-# M1E: drive the dev preview line if it is wired in the scene.
 func _show_preview_line(unit: Node, target_position: Vector3) -> void:
 	if move_preview_line == null or not move_preview_line.has_method("track_unit"):
 		return
 	move_preview_line.track_unit(unit)
-	if move_preview_line.has_method("show_preview") and unit.has_method("global_position"):
-		move_preview_line.show_preview(unit.global_position, target_position)
 
-# M1E: keep the preview line tracking the selected unit so it shrinks as the tank
-# approaches the target. Also wire move_finished so the preview hides on arrival.
+	var unit_3d: Node3D = unit as Node3D
+	if unit_3d == null:
+		return
+
+	if move_preview_line.has_method("show_preview"):
+		move_preview_line.show_preview(unit_3d.global_position, target_position)
+
 func _wire_preview_to_selection() -> void:
 	if move_preview_line == null or selection_controller == null:
 		return
