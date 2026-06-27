@@ -54,6 +54,7 @@ Open in Godot:
 
 See:
 
+- `docs/GAME_TARGET_VISION_FROM_PHASER.md`
 - `docs/PROJECT_STATE.md`
 - `docs/CURRENT_NEXT_STEP.md`
 - `docs/GODOT_M0_TECHNICAL_SLICE.md`
