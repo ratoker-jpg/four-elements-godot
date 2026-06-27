@@ -1,0 +1,19 @@
+; Engine configuration file.
+; It is best edited using the Godot editor UI and not directly.
+;
+; Format:
+;   [section]
+;   param=value
+
+config_version=5
+
+[application]
+
+config/name="Four Elements Godot"
+config/description="Four Elements RTS migration target: Godot 4.7 technical vertical slice."
+run/main_scene="res://scenes/main/main.tscn"
+config/features=PackedStringArray("4.7")
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
