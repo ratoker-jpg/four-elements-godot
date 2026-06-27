@@ -1,0 +1,89 @@
+{
+  "type": "four_elements_godot_asset_metadata",
+  "asset_kind": "hull",
+  "asset_id": "wasp",
+  "source_3ds": "D:\\Desktop\\Модели\\Корпуса\\3дс\\Wasp_0123.3ds",
+  "geometry_source": "Wasp_0123.3ds",
+  "mod_range": [
+    "m0",
+    "m1",
+    "m2",
+    "m3"
+  ],
+  "importer": "import_scene.max3ds",
+  "normalization": {
+    "root_policy": "bbox_center_xy_bottom_z",
+    "offset_subtracted_from_vertices": [
+      0.0,
+      0.0,
+      3.0517578125e-05
+    ],
+    "bbox_before_world": {
+      "min": [
+        992.375,
+        379.9212646484375,
+        -40.713069915771484
+      ],
+      "max": [
+        1256.375,
+        841.9212646484375,
+        140.78689575195312
+      ],
+      "center": [
+        1124.375,
+        610.9212646484375,
+        50.03691101074219
+      ],
+      "size": [
+        264.0,
+        462.0,
+        181.49996948242188
+      ]
+    },
+    "bbox_after_local": {
+      "min": [
+        -132.0,
+        -231.0,
+        0.0
+      ],
+      "max": [
+        132.0,
+        231.0,
+        148.49996948242188
+      ],
+      "center": [
+        0.0,
+        0.0,
+        74.24998474121094
+      ],
+      "size": [
+        264.0,
+        462.0,
+        148.49996948242188
+      ]
+    }
+  },
+  "sockets": {
+    "TurretSocket": {
+      "source_object": "mount",
+      "source_policy": "mount_origin",
+      "local_position": [
+        0.0,
+        -82.5,
+        148.499969
+      ],
+      "note": "Authoritative sidecar metadata. GLB also contains a named marker node if exporter preserves it."
+    }
+  },
+  "uv_layers": [
+    "UVMap"
+  ],
+  "textures_expected": {
+    "cyan": "assets/textures/hulls/wasp/cyan/m0.png",
+    "green": "assets/textures/hulls/wasp/green/m0.png",
+    "yellow": "assets/textures/hulls/wasp/yellow/m0.png",
+    "purple": "assets/textures/hulls/wasp/purple/m0.png"
+  },
+  "glb": "D:\\Desktop\\Модели\\godot_asset_pipeline_m0g\\assets\\models\\hulls\\wasp\\wasp_0123.glb",
+  "warnings": []
+}
