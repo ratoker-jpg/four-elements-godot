@@ -1,0 +1,73 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/units/Tank3D.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/camera/rts_camera_3d.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/controllers/selection_controller_3d.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/dev/grid_ground_3d.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/controllers/move_command_controller_3d.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/dev/move_target_marker_3d.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/dev/move_preview_line_3d.gd" id="7"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ground"]
+size = Vector3(2560, 1, 2560)
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+ambient_light_source = 2
+ambient_light_color = Color(0.5, 0.55, 0.58, 1)
+ambient_light_energy = 0.7
+
+[node name="M1E_MovementPolishTest" type="Node3D"]
+
+[node name="GridGround" type="Node3D" parent="."]
+script = ExtResource("4")
+
+[node name="GroundBody" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="GroundBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_ground")
+
+[node name="Tank3D" parent="." instance=ExtResource("1")]
+move_speed = 120.0
+stop_distance = 8.0
+arrival_slowdown_distance = 60.0
+min_move_distance = 4.0
+
+[node name="RTSCameraRig" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 160)
+script = ExtResource("2")
+
+[node name="Camera3D" type="Camera3D" parent="RTSCameraRig"]
+current = true
+fov = 55.0
+
+[node name="SelectionController3D" type="Node" parent="."]
+script = ExtResource("3")
+camera_path = NodePath("../RTSCameraRig/Camera3D")
+
+[node name="MoveCommandController3D" type="Node" parent="."]
+script = ExtResource("5")
+camera_path = NodePath("../RTSCameraRig/Camera3D")
+selection_controller_path = NodePath("../SelectionController3D")
+move_target_marker_path = NodePath("../MoveTargetMarker")
+move_preview_line_path = NodePath("../MovePreviewLine")
+
+[node name="MoveTargetMarker" type="Node3D" parent="."]
+script = ExtResource("6")
+
+[node name="MovePreviewLine" type="Node3D" parent="."]
+script = ExtResource("7")
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 0, 0)
+light_energy = 2.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="M1ELabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.906308, 0.422618, 0, -0.422618, 0.906308, -360, 0, -360)
+text = "M1E: left click tank to select, right click ground to move. Fading target marker + straight-line preview. No stop hotkey (S is camera pan)."
+font_size = 18
+billboard = 1

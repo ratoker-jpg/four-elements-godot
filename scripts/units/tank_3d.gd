@@ -1,8 +1,15 @@
 extends Node3D
 
-# GODOT-M1B runtime skeleton only.
+# GODOT-M1B runtime skeleton, polished in GODOT-M1E.
 # Loads a hull and turret, assembles them through marker nodes with metadata fallback,
 # and applies faction materials. Gameplay behavior belongs in later milestones.
+#
+# M1E movement polish:
+# - arrival slowdown distance for less jittery stops
+# - min_move_distance to ignore micro right-clicks near current position
+# - is_moving() helper
+# - move_started / move_finished signals
+# - smoothed rotation that never overshoots target yaw
 
 const SUPPORTED_FACTIONS := ["cyan", "green", "yellow", "purple"]
 
@@ -34,8 +41,16 @@ const TURRETS := {
 @export var move_speed := 4.0
 @export var turn_speed := 8.0
 @export var stop_distance := 0.15
+# M1E: distance below which the tank decelerates toward the target to avoid jitter.
+@export var arrival_slowdown_distance := 1.2
+# M1E: right-clicks closer than this to the current position are ignored as no-ops.
+@export var min_move_distance := 0.05
 @export var movement_enabled := true
 @export var show_debug_move_target := true
+
+# M1E signals for movement lifecycle.
+signal move_started(target_position: Vector3)
+signal move_finished(final_position: Vector3)
 
 @onready var hull_root: Node3D = $HullRoot
 @onready var turret_root: Node3D = $TurretRoot
@@ -72,19 +87,40 @@ func move_to(world_position: Vector3) -> void:
 	if not movement_enabled:
 		return
 
-	move_target = Vector3(world_position.x, global_position.y, world_position.z)
+	var flat_target := Vector3(world_position.x, global_position.y, world_position.z)
+
+	# M1E: ignore micro-moves that would just cause jitter.
+	var flat_offset := Vector3(
+		flat_target.x - global_position.x,
+		0.0,
+		flat_target.z - global_position.z,
+	)
+	if flat_offset.length() <= min_move_distance:
+		return
+
+	move_target = flat_target
+	var was_active := move_target_active
 	move_target_active = true
 	_update_debug_move_target_marker()
+	if not was_active:
+		move_started.emit(move_target)
 
 func stop_moving() -> void:
+	var was_active := move_target_active
 	move_target_active = false
 	_update_debug_move_target_marker()
+	if was_active:
+		move_finished.emit(global_position)
 
 func has_move_target() -> bool:
 	return move_target_active
 
 func get_move_target() -> Vector3:
 	return move_target
+
+# M1E: convenience accessor used by dev UI / preview systems.
+func is_moving() -> bool:
+	return move_target_active
 
 func rebuild() -> void:
 	_clear_runtime_children()
@@ -262,14 +298,25 @@ func _update_movement(delta: float) -> void:
 	)
 	var distance := offset.length()
 	if distance <= stop_distance:
+		# Snap to the flat target to avoid floating-point drift and stop cleanly.
 		global_position = Vector3(move_target.x, current_position.y, move_target.z)
 		stop_moving()
 		return
 
 	var direction := offset / distance
-	var step: float = min(move_speed * delta, distance)
+
+	# M1E: smooth arrival. Within arrival_slowdown_distance the speed scales down
+	# linearly so the tank decelerates instead of jittering around the target.
+	var speed_scale := 1.0
+	if distance < arrival_slowdown_distance:
+		speed_scale = clampf(distance / arrival_slowdown_distance, 0.15, 1.0)
+	var effective_speed := move_speed * speed_scale
+
+	var step: float = min(effective_speed * delta, distance)
 	global_position = current_position + direction * step
 
+	# M1E: smoothed rotation. lerp_angle already handles wraparound; clamping the
+	# factor prevents overshoot which previously caused visible twitching.
 	if direction.length_squared() > 0.0:
 		var target_yaw := atan2(direction.x, direction.z)
 		rotation.y = lerp_angle(rotation.y, target_yaw, min(turn_speed * delta, 1.0))
