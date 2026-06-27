@@ -1,0 +1,28 @@
+# Godot editor/generated cache
+.godot/
+
+# Godot 3 legacy import cache, harmless if absent
+.import/
+
+# Export/build outputs
+build/
+dist/
+exports/
+*.zip
+*.exe
+*.pck
+*.apk
+*.aab
+*.dmg
+*.app
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
+.vscode/
+.idea/
+
+# Large local-only raw dumps
+_local/
