@@ -47,6 +47,10 @@ const TURRETS := {
 @export var min_move_distance := 0.05
 @export var movement_enabled := true
 @export var show_debug_move_target := true
+# M1E-HF1: visual forward yaw offset in degrees. Applied to movement rotation so
+# the imported hull model faces the movement direction. Default 180.0 because the
+# current Wasp GLB faces -Z (toward the camera) while movement yaw assumes +Z forward.
+@export var visual_forward_yaw_offset_degrees := 180.0
 
 # M1E signals for movement lifecycle.
 signal move_started(target_position: Vector3)
@@ -318,7 +322,7 @@ func _update_movement(delta: float) -> void:
 	# M1E: smoothed rotation. lerp_angle already handles wraparound; clamping the
 	# factor prevents overshoot which previously caused visible twitching.
 	if direction.length_squared() > 0.0:
-		var target_yaw := atan2(direction.x, direction.z)
+		var target_yaw := atan2(direction.x, direction.z) + deg_to_rad(visual_forward_yaw_offset_degrees)
 		rotation.y = lerp_angle(rotation.y, target_yaw, min(turn_speed * delta, 1.0))
 
 func _ensure_debug_move_target_marker() -> void:
