@@ -15,7 +15,7 @@ ambient_light_color = Color(0.5, 0.55, 0.58, 1)
 ambient_light_energy = 0.7
 
 [sub_resource type="Theme" id="Theme_hud"]
-default_font_size = 18
+default_font_size = 13
 
 [node name="GameRoot" type="Node3D"]
 script = ExtResource("1")
@@ -25,7 +25,7 @@ cell_size_world = 64.0
 [node name="Systems" type="Node" parent="."]
 
 [node name="RTSCameraRig" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 2048)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 672, 0, 3344)
 script = ExtResource("2")
 
 [node name="Camera3D" type="Camera3D" parent="RTSCameraRig"]
@@ -73,66 +73,59 @@ environment = SubResource("Environment_world")
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("7")
 
-[node name="Panel" type="Panel" parent="HUD"]
+[node name="Panel" type="PanelContainer" parent="HUD"]
 offset_left = 16.0
 offset_top = 16.0
-offset_right = 420.0
-offset_bottom = 320.0
+offset_right = 316.0
+offset_bottom = 242.0
 theme = SubResource("Theme_hud")
 
-[node name="VBox" type="VBoxContainer" parent="HUD/Panel"]
+[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
 layout_mode = 2
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 392.0
-offset_bottom = 292.0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
 
-[node name="RawLabel" type="Label" parent="HUD/Panel/VBox"]
+[node name="VBox" type="VBoxContainer" parent="HUD/Panel/Margin"]
 layout_mode = 2
-text = "Raw:"
+theme_override_constants/separation = 4
 
-[node name="RawValue" type="Label" parent="HUD/Panel/VBox"]
+[node name="Title" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "0"
+theme_override_font_sizes/font_size = 15
+text = "Four Elements / M2 Start"
 
-[node name="EnergyLabel" type="Label" parent="HUD/Panel/VBox"]
+[node name="ResourcesText" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Energy:"
+text = "Raw: 0\nEnergy: 0\nUnits: 1"
 
-[node name="EnergyValue" type="Label" parent="HUD/Panel/VBox"]
+[node name="SelectedText" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "0"
+text = "Selected: <none>"
 
-[node name="UnitsLabel" type="Label" parent="HUD/Panel/VBox"]
-layout_mode = 2
-text = "Units:"
-
-[node name="UnitsValue" type="Label" parent="HUD/Panel/VBox"]
-layout_mode = 2
-text = "0"
-
-[node name="SelectedLabel" type="Label" parent="HUD/Panel/VBox"]
-layout_mode = 2
-text = "Selected:"
-
-[node name="SelectedValue" type="Label" parent="HUD/Panel/VBox"]
-layout_mode = 2
-text = "<none>"
-
-[node name="Separator" type="HSeparator" parent="HUD/Panel/VBox"]
+[node name="Separator" type="HSeparator" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
 
-[node name="ControlsHint" type="Label" parent="HUD/Panel/VBox"]
+[node name="ControlsTitle" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Controls: LMB select, RMB move, WASD/arrows camera, wheel zoom, Q/E rotate"
+theme_override_font_sizes/font_size = 12
+text = "Controls"
 
-[node name="Separator2" type="HSeparator" parent="HUD/Panel/VBox"]
+[node name="ControlsHint" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "LMB: select\nRMB: move\nWASD/arrows: camera\nWheel: zoom\nQ/E: rotate"
+
+[node name="Separator2" type="HSeparator" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
 
-[node name="DebugLabel" type="Label" parent="HUD/Panel/VBox"]
+[node name="DebugTitle" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Debug:"
+theme_override_font_sizes/font_size = 12
+text = "Debug"
 
-[node name="DebugText" type="Label" parent="HUD/Panel/VBox"]
+[node name="DebugText" type="Label" parent="HUD/Panel/Margin/VBox"]
 layout_mode = 2
-text = "Map: ?"
+theme_override_font_sizes/font_size = 12
+text = "Map: 64x64\nOccupied: 19\nMinerals: 6"

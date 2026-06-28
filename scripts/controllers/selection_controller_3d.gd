@@ -8,6 +8,8 @@ extends Node
 
 @onready var camera: Camera3D = get_node_or_null(camera_path) as Camera3D
 
+signal selection_changed(selected_node: Node)
+
 var selected: Node
 
 func _ready() -> void:
@@ -25,6 +27,10 @@ func _unhandled_input(event: InputEvent) -> void:
 func clear_selection() -> void:
 	if selected and selected.has_method("set_selected"):
 		selected.set_selected(false)
+	if selected != null:
+		selected = null
+		selection_changed.emit(null)
+		return
 	selected = null
 
 func get_selected_unit() -> Node:
@@ -49,10 +55,12 @@ func _select_from_screen_position(screen_position: Vector2) -> void:
 		next_selected = _find_selectable(result.get("collider"))
 
 	if next_selected != selected:
-		clear_selection()
+		if selected and selected.has_method("set_selected"):
+			selected.set_selected(false)
 		selected = next_selected
 		if selected and selected.has_method("set_selected"):
 			selected.set_selected(true)
+		selection_changed.emit(selected)
 
 func _find_selectable(value: Variant) -> Node:
 	if not value is Node:

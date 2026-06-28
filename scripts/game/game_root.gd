@@ -9,8 +9,13 @@ class_name GameRoot
 
 @export var map_size_cells: Vector2i = Vector2i(64, 64)
 @export var cell_size_world: float = 64.0
+@export var show_debug_visualization := true
+@export var debug_grid_step_cells := 8
+@export var tank_visual_scale := 0.12
 
 @onready var systems: Node = $Systems
+@onready var camera_rig: Node3D = $RTSCameraRig
+@onready var selection_controller: Node = $Systems/SelectionController3D
 @onready var map_root: Node3D = $MapRoot
 @onready var ground_root: Node3D = $MapRoot/Ground
 @onready var resources_root: Node3D = $MapRoot/Resources
@@ -41,6 +46,7 @@ func _ready() -> void:
 	_build_ground()
 	_spawn_entities()
 	_build_debug_visualization()
+	_focus_camera_on_start_area()
 	_wire_hud()
 
 func _build_ground() -> void:
@@ -49,7 +55,8 @@ func _build_ground() -> void:
 	var mesh := PlaneMesh.new()
 	mesh.size = world_size
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.10, 0.13, 0.12, 1.0)
+	material.albedo_color = Color(0.16, 0.20, 0.17, 1.0)
+	material.roughness = 0.9
 	var ground := MeshInstance3D.new()
 	ground.name = "GroundPlane"
 	ground.mesh = mesh
@@ -106,6 +113,11 @@ func _spawn_tank(entity: Dictionary, world_pos: Vector3) -> void:
 		push_error("GameRoot: could not instantiate Tank3D")
 		return
 	tank.global_position = world_pos
+	# M2 keeps the M1 tank scene intact, but scales this instance so it reads as
+	# a mobile unit beside 64-unit RTS cells instead of as a building.
+	tank.scale = Vector3.ONE * tank_visual_scale
+	tank.set("show_debug_markers", false)
+	tank.set("show_debug_move_target", false)
 	# Scale M1 movement values for the larger M2 world.
 	tank.set("move_speed", 240.0)
 	tank.set("stop_distance", 16.0)
@@ -114,17 +126,22 @@ func _spawn_tank(entity: Dictionary, world_pos: Vector3) -> void:
 	units_root.add_child(tank)
 
 func _build_debug_visualization() -> void:
+	debug_root.visible = show_debug_visualization
+	if not show_debug_visualization:
+		return
+
 	var world_size := map_grid.map_world_size()
 	# Map bounds outline.
-	_add_rect_debug(Vector3(0, 0.1, 0), Vector3(world_size.x, 0.1, 0), Vector3(world_size.x, 0.1, world_size.y), Vector3(0, 0.1, world_size.y), Color(1, 1, 0.2, 0.8))
+	_add_rect_debug(Vector3(0, 0.1, 0), Vector3(world_size.x, 0.1, 0), Vector3(world_size.x, 0.1, world_size.y), Vector3(0, 0.1, world_size.y), Color(1, 0.9, 0.25, 0.45))
 
-	# Sampled grid lines (every 4 cells to avoid clutter).
-	for i in range(0, map_size_cells.x + 1, 4):
+	# Sampled grid lines. Every 8 cells keeps orientation without overwhelming play.
+	var grid_step: int = maxi(debug_grid_step_cells, 1)
+	for i in range(0, map_size_cells.x + 1, grid_step):
 		var x := float(i) * cell_size_world
-		_add_line_debug(Vector3(x, 0.08, 0), Vector3(x, 0.08, world_size.y), Color(0.4, 0.5, 0.45, 0.4))
-	for j in range(0, map_size_cells.y + 1, 4):
+		_add_line_debug(Vector3(x, 0.08, 0), Vector3(x, 0.08, world_size.y), Color(0.65, 0.78, 0.68, 0.16))
+	for j in range(0, map_size_cells.y + 1, grid_step):
 		var z := float(j) * cell_size_world
-		_add_line_debug(Vector3(0, 0.08, z), Vector3(world_size.x, 0.08, z), Color(0.4, 0.5, 0.45, 0.4))
+		_add_line_debug(Vector3(0, 0.08, z), Vector3(world_size.x, 0.08, z), Color(0.65, 0.78, 0.68, 0.16))
 
 	# Footprint outlines for each occupied entity.
 	for entity in start_state.entities:
@@ -134,19 +151,19 @@ func _build_debug_visualization() -> void:
 		var anchor: Vector2i = entity.get("anchor_cell", Vector2i.ZERO)
 		var min_world := Vector3(float(anchor.x) * cell_size_world, 0.15, float(anchor.y) * cell_size_world)
 		var max_world := Vector3(float(anchor.x + footprint.x) * cell_size_world, 0.15, float(anchor.y + footprint.y) * cell_size_world)
-		var color := Color(0.2, 1.0, 0.4, 0.9)
+		var color := Color(0.25, 0.95, 0.45, 0.55)
 		match entity.get("kind", ""):
 			"hq":
-				color = Color(0.3, 0.7, 1.0, 0.9)
+				color = Color(0.25, 0.65, 1.0, 0.65)
 			"infinite_mineral":
-				color = Color(1.0, 0.85, 0.2, 0.9)
+				color = Color(1.0, 0.82, 0.25, 0.65)
 		_add_rect_debug(min_world, Vector3(max_world.x, 0.15, min_world.z), max_world, Vector3(min_world.x, 0.15, max_world.z), color)
 
-	# Occupied-cell dots (small red spheres on each occupied cell center).
+	# Occupied-cell dots are intentionally tiny so they read as data, not scenery.
 	for cell_key in occupancy.get_all_occupied_cells():
 		var cell: Vector2i = cell_key
 		var center := map_grid.grid_to_world(cell)
-		_add_dot_debug(center + Vector3(0, 0.2, 0), Color(1, 0.15, 0.15, 0.7))
+		_add_dot_debug(center + Vector3(0, 0.2, 0), Color(1, 0.25, 0.2, 0.35))
 
 func _add_line_debug(a: Vector3, b: Vector3, color: Color) -> void:
 	var mesh := ImmediateMesh.new()
@@ -158,7 +175,8 @@ func _add_line_debug(a: Vector3, b: Vector3, color: Color) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.no_depth_test = true
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = false
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
@@ -180,7 +198,8 @@ func _add_rect_debug(a: Vector3, b: Vector3, c: Vector3, d: Vector3, color: Colo
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.no_depth_test = true
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = false
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
@@ -188,18 +207,42 @@ func _add_rect_debug(a: Vector3, b: Vector3, c: Vector3, d: Vector3, color: Colo
 
 func _add_dot_debug(pos: Vector3, color: Color) -> void:
 	var mesh := SphereMesh.new()
-	mesh.radius = 4.0
-	mesh.height = 8.0
+	mesh.radius = 2.2
+	mesh.height = 4.4
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.emission_enabled = true
 	mat.emission = color
-	mat.no_depth_test = true
+	mat.emission_energy_multiplier = 0.4
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.no_depth_test = false
 	var mi := MeshInstance3D.new()
 	mi.mesh = mesh
 	mi.material_override = mat
 	mi.global_position = pos
 	debug_root.add_child(mi)
+
+func _focus_camera_on_start_area() -> void:
+	if camera_rig == null:
+		return
+
+	var focus_points: Array[Vector3] = []
+	for entity in start_state.entities:
+		var kind: String = entity.get("kind", "")
+		if kind == "hq" or kind == "tank" or kind == "mineral":
+			focus_points.append(entity.get("world_position", Vector3.ZERO))
+	if focus_points.is_empty():
+		return
+
+	var focus := Vector3.ZERO
+	for point in focus_points:
+		focus += point
+	focus /= float(focus_points.size())
+	camera_rig.global_position = Vector3(focus.x, 0.0, focus.z)
+	camera_rig.set("zoom", 620.0)
+	camera_rig.set("yaw", 0.15)
+	if camera_rig.has_method("_update_camera_transform"):
+		camera_rig.call("_update_camera_transform")
 
 func _wire_hud() -> void:
 	if hud == null or not hud.has_method("update_state"):
@@ -214,6 +257,10 @@ func _wire_hud() -> void:
 		"units": start_state.get_entities_of_kind("tank").size(),
 		"selected": "<none>",
 	})
+	if selection_controller != null and selection_controller.has_signal("selection_changed"):
+		var callback := Callable(self, "on_selection_changed")
+		if not selection_controller.is_connected("selection_changed", callback):
+			selection_controller.connect("selection_changed", callback)
 
 # Called by SelectionController3D via signal wiring (if added in a future milestone).
 func on_selection_changed(selected_node: Node) -> void:
