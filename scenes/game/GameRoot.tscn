@@ -1,0 +1,138 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/game_root.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/camera/rts_camera_3d.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/controllers/selection_controller_3d.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/controllers/move_command_controller_3d.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/dev/move_target_marker_3d.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/dev/move_preview_line_3d.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/game/hud_placeholder.gd" id="7"]
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+ambient_light_source = 2
+ambient_light_color = Color(0.5, 0.55, 0.58, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="Theme" id="Theme_hud"]
+default_font_size = 18
+
+[node name="GameRoot" type="Node3D"]
+script = ExtResource("1")
+map_size_cells = Vector2i(64, 64)
+cell_size_world = 64.0
+
+[node name="Systems" type="Node" parent="."]
+
+[node name="RTSCameraRig" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2048, 0, 2048)
+script = ExtResource("2")
+
+[node name="Camera3D" type="Camera3D" parent="RTSCameraRig"]
+current = true
+fov = 55.0
+
+[node name="SelectionController3D" type="Node" parent="Systems"]
+script = ExtResource("3")
+camera_path = NodePath("../../RTSCameraRig/Camera3D")
+
+[node name="MoveCommandController3D" type="Node" parent="Systems"]
+script = ExtResource("4")
+camera_path = NodePath("../../RTSCameraRig/Camera3D")
+selection_controller_path = NodePath("../SelectionController3D")
+move_target_marker_path = NodePath("../../MapRoot/Markers/MoveTargetMarker")
+move_preview_line_path = NodePath("../../MapRoot/Markers/MovePreviewLine")
+
+[node name="MapRoot" type="Node3D" parent="."]
+
+[node name="Ground" type="Node3D" parent="MapRoot"]
+
+[node name="Resources" type="Node3D" parent="MapRoot"]
+
+[node name="Buildings" type="Node3D" parent="MapRoot"]
+
+[node name="Units" type="Node3D" parent="MapRoot"]
+
+[node name="Markers" type="Node3D" parent="MapRoot"]
+
+[node name="MoveTargetMarker" type="Node3D" parent="MapRoot/Markers"]
+script = ExtResource("5")
+
+[node name="MovePreviewLine" type="Node3D" parent="MapRoot/Markers"]
+script = ExtResource("6")
+
+[node name="Debug" type="Node3D" parent="MapRoot"]
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 0, 0)
+light_energy = 2.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("7")
+
+[node name="Panel" type="Panel" parent="HUD"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 420.0
+offset_bottom = 320.0
+theme = SubResource("Theme_hud")
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Panel"]
+layout_mode = 2
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 392.0
+offset_bottom = 292.0
+
+[node name="RawLabel" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Raw:"
+
+[node name="RawValue" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="EnergyLabel" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Energy:"
+
+[node name="EnergyValue" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="UnitsLabel" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Units:"
+
+[node name="UnitsValue" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "0"
+
+[node name="SelectedLabel" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Selected:"
+
+[node name="SelectedValue" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "<none>"
+
+[node name="Separator" type="HSeparator" parent="HUD/Panel/VBox"]
+layout_mode = 2
+
+[node name="ControlsHint" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Controls: LMB select, RMB move, WASD/arrows camera, wheel zoom, Q/E rotate"
+
+[node name="Separator2" type="HSeparator" parent="HUD/Panel/VBox"]
+layout_mode = 2
+
+[node name="DebugLabel" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Debug:"
+
+[node name="DebugText" type="Label" parent="HUD/Panel/VBox"]
+layout_mode = 2
+text = "Map: ?"
