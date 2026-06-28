@@ -1,0 +1,131 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/game_root.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/camera/rts_camera_3d.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/controllers/selection_controller_3d.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/controllers/move_command_controller_3d.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/dev/move_target_marker_3d.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/dev/move_preview_line_3d.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/game/hud_placeholder.gd" id="7"]
+
+[sub_resource type="Environment" id="Environment_world"]
+background_mode = 1
+ambient_light_source = 2
+ambient_light_color = Color(0.5, 0.55, 0.58, 1)
+ambient_light_energy = 0.7
+
+[sub_resource type="Theme" id="Theme_hud"]
+default_font_size = 13
+
+[node name="GameRoot" type="Node3D"]
+script = ExtResource("1")
+map_size_cells = Vector2i(64, 64)
+cell_size_world = 64.0
+
+[node name="Systems" type="Node" parent="."]
+
+[node name="RTSCameraRig" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 672, 0, 3344)
+script = ExtResource("2")
+
+[node name="Camera3D" type="Camera3D" parent="RTSCameraRig"]
+current = true
+fov = 55.0
+
+[node name="SelectionController3D" type="Node" parent="Systems"]
+script = ExtResource("3")
+camera_path = NodePath("../../RTSCameraRig/Camera3D")
+
+[node name="MoveCommandController3D" type="Node" parent="Systems"]
+script = ExtResource("4")
+camera_path = NodePath("../../RTSCameraRig/Camera3D")
+selection_controller_path = NodePath("../SelectionController3D")
+move_target_marker_path = NodePath("../../MapRoot/Markers/MoveTargetMarker")
+move_preview_line_path = NodePath("../../MapRoot/Markers/MovePreviewLine")
+
+[node name="MapRoot" type="Node3D" parent="."]
+
+[node name="Ground" type="Node3D" parent="MapRoot"]
+
+[node name="Resources" type="Node3D" parent="MapRoot"]
+
+[node name="Buildings" type="Node3D" parent="MapRoot"]
+
+[node name="Units" type="Node3D" parent="MapRoot"]
+
+[node name="Markers" type="Node3D" parent="MapRoot"]
+
+[node name="MoveTargetMarker" type="Node3D" parent="MapRoot/Markers"]
+script = ExtResource("5")
+
+[node name="MovePreviewLine" type="Node3D" parent="MapRoot/Markers"]
+script = ExtResource("6")
+
+[node name="Debug" type="Node3D" parent="MapRoot"]
+
+[node name="SunLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 0, 0)
+light_energy = 2.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_world")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("7")
+
+[node name="Panel" type="PanelContainer" parent="HUD"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 316.0
+offset_bottom = 242.0
+theme = SubResource("Theme_hud")
+
+[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="VBox" type="VBoxContainer" parent="HUD/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Four Elements / M2 Start"
+
+[node name="ResourcesText" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Raw: 0\nEnergy: 0\nUnits: 1"
+
+[node name="SelectedText" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+text = "Selected: <none>"
+
+[node name="Separator" type="HSeparator" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="ControlsTitle" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Controls"
+
+[node name="ControlsHint" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "LMB: select\nRMB: move\nWASD/arrows: camera\nWheel: zoom\nQ/E: rotate"
+
+[node name="Separator2" type="HSeparator" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="DebugTitle" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Debug"
+
+[node name="DebugText" type="Label" parent="HUD/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Map: 64x64\nOccupied: 19\nMinerals: 6"
